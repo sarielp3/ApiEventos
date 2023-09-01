@@ -39,6 +39,19 @@ app.get('/api/login/:correo/:contra', (req,res) =>{
     })
 });
 
+app.get('/api/verif/:correo', (req,res) =>{
+    const{correo, contra} = req.params;
+    const sql = `SELECT * from usuarios where CORREO = '${correo}' `;
+    connection.query(sql,(error,results)=>{
+        if(error) throw error;
+        if(results.length > 0){
+            res.json(results)
+        }else{
+            res.json([])
+        }
+    })
+});
+
 app.get('/api/eventos', (req,res) =>{
     // const  { usuario } = req.params;
      const sql = `SELECT * FROM eventos where STATUS = 'A'`;
@@ -70,6 +83,18 @@ app.get('/api/eventos', (req,res) =>{
          }
      })
  });
+
+app.post('/api/crear-cuenta',(req,res)=>{
+    const{NOMBRE,APELLIDO,CORREO,NUM_CELULAR,CONTRASENA} = req.body;
+    const sql = `insert into usuarios(NOMBRE,APELLIDO,CORREO,NUM_CELULAR,CONTRASENA) values('${NOMBRE}','${APELLIDO}','${CORREO}','${NUM_CELULAR}','${CONTRASENA}')`;
+    connection.query(sql,(error,results)=>{
+        if(error) throw error
+        else{
+            res.json({status : 'usuario creado', data : results})
+        }
+    });
+
+});
 
 app.post('/api/insertar-boleto', (req,res) =>{
     const{id_evento,NoSilla,id_zona,precio} = req.body;
@@ -157,6 +182,7 @@ app.get('/api/hacientos/:id', (req,res) =>{
 
  app.post('/api/sendMail', (req, res) => {
     const{correo,evento,fecha,total,asientos} = req.body;
+    var fechaParam = new Date(fecha);
     var today = new Date();
     // `getDate()` devuelve el día del mes (del 1 al 31)
     var day = today.getDate();
@@ -168,6 +194,11 @@ app.get('/api/hacientos/:id', (req,res) =>{
     var year = today.getFullYear();
 
     var fechaActual = year + "-" + month + "-" + day;
+
+    var dia = fechaParam.getDate();
+    var mes = fechaParam.getMonth() + 1;
+    var anio = fechaParam.getFullYear();
+    var fechaEvento = anio + "-" + mes + "-" + dia;
 
     var transporter = nodemailer.createTransport({
         service: 'outlook',
@@ -182,7 +213,7 @@ app.get('/api/hacientos/:id', (req,res) =>{
         subject: `Confimacion compra boletos ${evento}`,
         html: `
         <strong>Nombre del evento:</strong> ${evento} <br/>
-        <strong>Fecha del evento:</strong> ${fecha} <br/>
+        <strong>Fecha del evento:</strong> ${fechaEvento} <br/>
         <strong>Fecha de compra:</strong> ${fechaActual}<br/>
         <strong>Total:</strong> $${total}<br/>
         <strong>Asientos:</strong> ${asientos}<br/>
